@@ -101,7 +101,7 @@ Check '管理员登录' {
   $r = Api 'POST' '/api/auth/login' @{ username = $AdminUser; password = $AdminPass; device = @{ name = '体检脚本'; platform = 'windows' } }
   if ($r.Status -ne 200) { throw "HTTP $($r.Status)：$($r.Raw)" }
   $script:token = $r.Json.accessToken
-  "账号 $($r.Json.user.username)"
+  "账号 $($r.Json.user.username)（体检用的临时管理员，跑完即删）"
 }
 
 Check '可写窗口是 8 天且今天在末尾' {

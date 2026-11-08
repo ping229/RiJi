@@ -305,6 +305,7 @@ export async function applyEntry(entry: {
 
   if (entry.entity === 'diary') {
     const p = entry.payload as DiaryLogPayload;
+    await ensureReplicaUser(entry.userId);
     await pool.query(
       `INSERT INTO diaries (id, user_id, diary_date, tz_id, vv, time_suspect, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, COALESCE($7::timestamptz, now()), COALESCE($8::timestamptz, now()))
@@ -317,7 +318,10 @@ export async function applyEntry(entry: {
 
   const p = entry.payload as BlockLogPayload;
 
-  // 日记可能还没同步过来，先补一条占位
+  // 用户可能还没同步过来（或历史上被手工建库漏了日志）：先补占位，
+  // 否则外键会让这一条永远失败，副本游标卡死再也追不上。
+  await ensureReplicaUser(entry.userId);
+
   await pool.query(
     `INSERT INTO diaries (id, user_id, diary_date, tz_id)
      VALUES ($1, $2, $3, $4)
@@ -403,6 +407,21 @@ async function shouldApplyBlock(p: BlockLogPayload): Promise<boolean> {
   } catch {
     return p.hlc > current.hlc;
   }
+}
+
+/**
+ * 副本上的用户占位：日记/块有外键指向 users，缺行会让这一条永远应用失败，
+ * 游标卡死。占位账号不能登录（随机口令），等真正的 user 日志到了会被覆盖。
+ */
+async function ensureReplicaUser(userId: string): Promise<void> {
+  const { rows } = await pool.query('SELECT 1 FROM users WHERE id = $1', [userId]);
+  if (rows.length > 0) return;
+  await pool.query(
+    `INSERT INTO users (id, username, role, status, password_hash, password_salt)
+     VALUES ($1, $2, 'user', 'active', 'placeholder', 'placeholder')
+     ON CONFLICT (id) DO NOTHING`,
+    [userId, `replicated_${userId.slice(0, 8)}`],
+  );
 }
 
 /** 历史版本落库（幂等，按主键去重） */

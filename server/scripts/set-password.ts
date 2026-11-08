@@ -10,7 +10,7 @@
 import { pool, closePool } from '../src/db/pool.ts';
 import { hashPassword } from '../src/auth/password.ts';
 import { writeAudit } from '../src/services/audit.ts';
-import { appendReplicationLog } from '../src/services/replication.ts';
+import { appendReplicationLog, toUserLogPayload } from '../src/services/replication.ts';
 
 async function main(): Promise<void> {
   const [username, password] = process.argv.slice(2);
@@ -55,7 +55,7 @@ async function main(): Promise<void> {
   ]);
   await pool.query('UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [user.id]);
 
-  // 让副本也拿到新密码
+  // 让副本也拿到新密码（必须带全加密材料，否则副本上会丢密钥）
   const { rows: full } = await pool.query('SELECT * FROM users WHERE id = $1', [user.id]);
   const row = full[0]!;
   await appendReplicationLog({
@@ -64,18 +64,7 @@ async function main(): Promise<void> {
     entityId: row.id,
     op: 'upsert',
     hlc: '',
-    payload: {
-      id: row.id,
-      username: row.username,
-      role: row.role,
-      status: row.status,
-      passwordHash: row.password_hash,
-      passwordSalt: row.password_salt,
-      tzId: row.tz_id,
-      dayCutHour: row.day_cut_hour,
-      createdAt: new Date(row.created_at).toISOString(),
-      disabledAt: row.disabled_at ? new Date(row.disabled_at).toISOString() : null,
-    },
+    payload: toUserLogPayload(row),
   });
 
   await writeAudit({
