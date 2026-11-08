@@ -68,9 +68,12 @@
 
 | 产物 | 说明 |
 |---|---|
-| `dist/RiJi-Windows-x64.zip` | Windows 客户端，解压即用，13.1MB |
-| `dist/RiJi-Android/RiJi-日记-arm64.apk` | 主流安卓手机（2018 年后），20.4MB |
-| `dist/RiJi-Android/RiJi-日记-armv7.apk` | 老款 32 位机型，18.7MB |
+| `dist/RiJi-Windows-x64.zip` | Windows 客户端，解压即用，13.5MB（2026-11-08 已用新代码重建） |
+| `dist/RiJi-Android/RiJi-日记-arm64.apk` | 主流安卓手机（2018 年后），20.4MB（**未包含本轮修复，需重新构建**） |
+| `dist/RiJi-Android/RiJi-日记-armv7.apk` | 老款 32 位机型，18.7MB（同上） |
+
+> 只有 Windows 包是本轮改动后重建的；安卓包还是 11-04 的构建，
+> 要拿到同样的"光标跟随 / 退出时同步 / 后台上传"，需要按下面命令重新出包。
 
 Android 安装与局域网访问说明见 `dist/RiJi-Android/安装说明.txt`。
 
