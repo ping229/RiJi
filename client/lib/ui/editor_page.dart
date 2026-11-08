@@ -319,6 +319,8 @@ class _EditorPageState extends State<EditorPage> with WidgetsBindingObserver {
       _scheduleIdleSync();
     } finally {
       _persisting = false;
+      // 落盘期间又输入了：立刻再来一次，别让内容在内存里等 25 秒
+      if (_dirty.isNotEmpty) _scheduleLocalSave();
     }
   }
 
@@ -364,10 +366,11 @@ class _EditorPageState extends State<EditorPage> with WidgetsBindingObserver {
     }
   }
 
-  /// 保存并尽量同步：退出页面、切后台、手动保存按钮都走这里
+  /// 保存并尽量同步：退出页面、切后台、手动保存按钮都走这里。
+  /// 同步最多等 6 秒——退出不该被慢网络卡住，剩下的交给待推送队列。
   Future<void> _flush() async {
     await _persistLocal(showStatus: false);
-    await _syncNow();
+    await _syncNow().timeout(const Duration(seconds: 6), onTimeout: () {});
   }
 
   void _addTextBlock() {
