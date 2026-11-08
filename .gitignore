@@ -23,6 +23,9 @@ deploy/.env
 *.key
 certs/
 
+# 只在本机保存的真实信息（真实 IP/端口/口令位置），绝不入库
+*.local.md
+
 # 日志与临时文件
 *.log
 *.tmp
