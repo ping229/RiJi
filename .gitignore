@@ -1,0 +1,36 @@
+# RiJi 仓库忽略规则
+#
+# 原则：源码与文档进库；构建产物、运行时数据、口令一律不进。
+
+# 构建产物（体积大、可重建）
+dist/
+client/build/
+client/.dart_tool/
+client/.flutter-plugins-dependencies
+client/android/.gradle/
+client/android/local.properties
+client/windows/flutter/ephemeral/
+server/node_modules/
+*.zip
+
+# 运行时数据：包含真实媒体密文、日志、首次启动生成的管理员口令
+server/var/
+
+# 凭据与环境配置
+.env
+deploy/.env
+*.pem
+*.key
+certs/
+
+# 日志与临时文件
+*.log
+*.tmp
+*.part
+
+# 编辑器 / 操作系统
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
