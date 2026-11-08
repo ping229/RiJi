@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>日记平台 · 管理员后台</title>
+  <link rel="stylesheet" href="/admin/style.css">
+</head>
+<body>
+  <div id="login" class="login-mask">
+    <form id="login-form" class="login-card">
+      <h1>日记平台</h1>
+      <p class="muted">管理员后台 · 仅管理员可登录</p>
+      <label>用户名<input id="login-username" autocomplete="username" autofocus></label>
+      <label>密码<input id="login-password" type="password" autocomplete="current-password"></label>
+      <button type="submit" id="login-submit">登录</button>
+      <p id="login-error" class="error"></p>
+    </form>
+  </div>
+
+  <div id="shell" hidden>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="dot"></span>
+        <div>
+          <strong>日记平台</strong>
+          <small>管理员后台</small>
+        </div>
+      </div>
+      <nav>
+        <button class="nav-item active" data-tab="overview">概览</button>
+        <button class="nav-item" data-tab="users">用户管理</button>
+        <button class="nav-item" data-tab="nodes">节点管理</button>
+        <button class="nav-item" data-tab="audit">审计日志</button>
+      </nav>
+      <div class="sidebar-foot">
+        <span id="admin-name" class="muted"></span>
+        <button id="logout" class="link">退出登录</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section id="tab-overview" class="tab">
+        <header class="page-head">
+          <h2>集群概览</h2>
+          <button id="btn-consistency" class="ghost">运行一致性校验</button>
+        </header>
+        <div id="stats" class="stat-grid"></div>
+        <div id="consistency-result" class="panel muted"></div>
+        <p class="hint">管理员可以查看数量与状态，但无法看到任何日记正文或媒体内容，也不提供导出用户日记的入口。</p>
+      </section>
+
+      <section id="tab-users" class="tab" hidden>
+        <header class="page-head">
+          <h2>用户管理</h2>
+          <div class="filters">
+            <input id="user-query" placeholder="搜索用户名">
+            <select id="user-status">
+              <option value="">全部状态</option>
+              <option value="active">活跃</option>
+              <option value="disabled">已禁用</option>
+            </select>
+            <button id="user-search" class="ghost">查询</button>
+          </div>
+        </header>
+
+        <form id="create-user-form" class="inline-form">
+          <input id="new-username" placeholder="新用户用户名" required>
+          <input id="new-password" type="password" placeholder="初始密码（至少 8 位）" required>
+          <input id="new-quota" type="number" min="1" max="10240" step="1" value="5" title="配额（GB），留空或 0 表示不限制" style="width:110px">
+          <select id="new-role">
+            <option value="user">普通用户</option>
+            <option value="admin">管理员</option>
+          </select>
+          <button type="submit">创建用户</button>
+        </form>
+
+        <table class="table">
+          <thead>
+            <tr><th>用户名</th><th>角色</th><th>状态</th><th>日记</th><th>块</th><th>存储</th><th>最后活跃</th><th>操作</th></tr>
+          </thead>
+          <tbody id="user-rows"></tbody>
+        </table>
+      </section>
+
+      <section id="tab-nodes" class="tab" hidden>
+        <header class="page-head">
+          <h2>节点管理</h2>
+          <button id="node-refresh" class="ghost">刷新</button>
+        </header>
+
+        <form id="add-node-form" class="inline-form">
+          <input id="node-id" placeholder="节点标识，如 node-2" required>
+          <input id="node-endpoint" placeholder="节点地址，如 https://api-2.example.com" required>
+          <select id="node-role">
+            <option value="replica">副本</option>
+            <option value="primary">主节点</option>
+          </select>
+          <button type="submit">加入节点</button>
+        </form>
+
+        <table class="table">
+          <thead>
+            <tr><th>节点</th><th>角色</th><th>状态</th><th>Epoch</th><th>同步进度</th><th>最后心跳</th><th>操作</th></tr>
+          </thead>
+          <tbody id="node-rows"></tbody>
+        </table>
+        <p class="hint">删除节点走安全退役：先确认数据在其他节点有完整副本，再进入“退役中”，最后一次下线前仍可只读服务。</p>
+      </section>
+
+      <section id="tab-audit" class="tab" hidden>
+        <header class="page-head">
+          <h2>审计日志</h2>
+          <button id="audit-refresh" class="ghost">刷新</button>
+        </header>
+        <table class="table">
+          <thead>
+            <tr><th>时间</th><th>操作人</th><th>动作</th><th>对象</th><th>详情</th></tr>
+          </thead>
+          <tbody id="audit-rows"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <script src="/admin/app.js"></script>
+</body>
+</html>

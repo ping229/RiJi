@@ -1,0 +1,246 @@
+:root {
+  --bg: #f6f4ef;
+  --panel: #ffffff;
+  --ink: #2b2b2b;
+  --muted: #7b7b7b;
+  --line: #e4dfd6;
+  --accent: #6b7f5e;
+  --accent-soft: #e7ecdf;
+  --danger: #b3413a;
+  --warn: #b07a1e;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+  font-size: 14px;
+}
+
+/* 登录 */
+.login-mask {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(160deg, #eef1e8, #f8f6f1);
+}
+/* 关键：作者样式里的 display 会覆盖 [hidden] 的默认 display:none，必须显式处理 */
+.login-mask[hidden] { display: none; }
+.login-card {
+  width: 340px;
+  background: var(--panel);
+  padding: 32px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  box-shadow: 0 20px 50px rgba(60, 70, 50, 0.12);
+}
+.login-card h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: 2px; }
+.login-card label { display: block; margin-top: 16px; font-size: 13px; color: var(--muted); }
+.login-card input {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+}
+.login-card button {
+  width: 100%;
+  margin-top: 22px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+}
+.login-card button:hover { background: #5c6f50; }
+
+/* 布局 */
+#shell {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  background: #fbfaf7;
+  border-right: 1px solid var(--line);
+  padding: 22px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.brand { display: flex; gap: 10px; align-items: center; }
+.brand .dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 6px var(--accent-soft);
+}
+.brand strong { display: block; font-size: 15px; }
+.brand small { color: var(--muted); font-size: 12px; }
+.nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 14px;
+}
+.nav-item:hover { background: #f0eee8; }
+.nav-item.active { background: var(--accent-soft); color: #3f4d36; font-weight: 600; }
+.sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+
+.content { padding: 28px 32px 60px; }
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.page-head h2 { margin: 0; font-size: 20px; }
+
+/* 卡片与表格 */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+}
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+}
+.stat .label { color: var(--muted); font-size: 12px; }
+.stat .value { font-size: 26px; font-weight: 600; margin-top: 6px; }
+.stat .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+.panel {
+  margin-top: 18px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  white-space: pre-wrap;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12.5px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+.table th, .table td {
+  text-align: left;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  vertical-align: middle;
+}
+.table th { background: #fbfaf7; color: var(--muted); font-weight: 600; }
+.table tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: #efeee9;
+  color: #555;
+}
+.badge.ok { background: var(--accent-soft); color: #3f4d36; }
+.badge.off { background: #f6e7e5; color: var(--danger); }
+.badge.warn { background: #f8efdc; color: var(--warn); }
+
+.inline-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+}
+.inline-form input, .inline-form select, .filters input, .filters select {
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 13px;
+  background: #fff;
+}
+.filters { display: flex; gap: 8px; }
+
+button { font-family: inherit; }
+.inline-form button, .ghost {
+  padding: 9px 16px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+.ghost { background: #fff; color: var(--ink); }
+.ghost:hover { border-color: var(--accent); color: var(--accent); }
+.inline-form button:hover { background: #5c6f50; }
+
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.row-actions button {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+.row-actions button:hover { border-color: var(--accent); color: var(--accent); }
+.row-actions button.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+.link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  text-align: left;
+}
+.muted { color: var(--muted); }
+.hint { color: var(--muted); font-size: 12.5px; margin-top: 18px; line-height: 1.7; }
+.error { color: var(--danger); font-size: 13px; min-height: 18px; margin: 10px 0 0; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  background: #2f372c;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  z-index: 50;
+}
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; line-height: 18px; }
+.badge-ok { background: #e6f4ea; color: #1e7e34; }
+.badge-warn { background: #fff4e5; color: #a35c00; }
+.badge-danger { background: #fdecea; color: #b3261e; }
+.muted { color: #888; }

@@ -1,0 +1,39 @@
+# ---- Flutter / Dart ----
+client/build/
+client/.dart_tool/
+client/.flutter-plugins
+client/.flutter-plugins-dependencies
+client/windows/flutter/ephemeral/
+client/android/.gradle/
+client/android/local.properties
+client/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+client/coverage/
+.dart_tool/
+build/
+
+# ---- Node ----
+server/node_modules/
+server/var/
+server/*.log
+
+# ---- 构建产物（体积大，用 Release 或本地构建）----
+dist/
+*.apk
+*.zip
+
+# ---- 本地配置 / 密钥（绝对不能提交）----
+deploy/.env
+*.env
+*.pem
+*.key
+certs/
+*.p12
+*.pfx
+
+# ---- 编辑器 / 系统 ----
+.idea/
+.vscode/
+*.iml
+*.swp
+.DS_Store
+Thumbs.db
