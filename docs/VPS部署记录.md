@@ -69,14 +69,45 @@ systemctl enable --now caddy
 ## 重新部署（改了服务端代码后）
 
 ```powershell
-# 本地打包
-tar -czf riji-server.tar.gz -C <repo> server admin
-# 上传
-pscp -pw <密码> riji-server.tar.gz root@<你的服务器IP>:/tmp/
-# 服务器上
-tar -xzf /tmp/riji-server.tar.gz -C /opt/riji
-cd /opt/riji/server && npm install --no-audit --no-fund
-systemctl restart riji
+# 本地打包：只带代码，别带 node_modules 与 var（var 里可能有口令文件）
+tar -czf $env:TEMP\riji-deploy.tgz --exclude=server/node_modules --exclude=server/var --exclude=server/test server admin
+pscp -pw <密码> $env:TEMP\riji-deploy.tgz root@<你的服务器IP>:/tmp/
+```
+
+```bash
+# 服务器上：先备份，再解压到 /opt/riji（注意是 /opt/riji，不是 /opt——解到 /opt 会生成 /opt/server，等于没更新）
+cd /opt && tar -czf /root/riji-backup-$(date +%Y%m%d-%H%M%S).tgz riji
+tar -xzf /tmp/riji-deploy.tgz -C /opt/riji
+cd /opt/riji/server && npm install --no-audit --no-fund   # package.json 没变可跳过
+systemctl restart riji && sleep 3
+curl -s http://127.0.0.1:<你的端口>/healthz
+```
+
+部署后怎么确认"新代码真的在跑"（2026-11-08 新增的标记）：
+
+```bash
+grep -c toUserLogPayload /opt/riji/server/src/services/replication.ts   # 应为 1
+test -f /opt/riji/server/src/services/retention.ts && echo YES          # 应为 YES
+grep -c 'media/:key/meta' /opt/riji/server/src/routes/replication.ts    # 应为 1
+```
+
+2026-11-08 的备份：`/root/riji-backup-20261108-234801.tgz`（13MB，含升级前的旧代码）。
+轮换口令前的用户行备份：`/root/admin-credentials-backup-*.json`（600，确认无误后可删）。
+
+## 重置密码（分两种情况）
+
+| 情况 | 用什么 |
+|---|---|
+| 账号**没有**端到端加密（`key_wrap` 为空） | `npx tsx scripts/set-password.ts <用户名> <新密码>` |
+| 账号**已启用**加密（有 `key_wrap`） | 优先在客户端里改；没有客户端时用 `node scripts/rewrap-password.mjs <用户名>`（重包裹主密钥，历史数据不丢） |
+
+`rewrap-password.mjs` 的口令用 base64 传，避免 shell 吃掉 `! $ *` 之类的字符：
+
+```bash
+set -a; . /etc/riji.env; set +a
+OLD=$(printf '%s' '旧密码' | base64 -w0); NEW=$(printf '%s' '新密码' | base64 -w0)
+cd /opt/riji/server
+RJJ_OLD_PASS_B64=$OLD RJJ_NEW_PASS_B64=$NEW node scripts/rewrap-password.mjs admin
 ```
 
 ## 已知情况
