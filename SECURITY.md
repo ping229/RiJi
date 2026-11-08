@@ -43,8 +43,8 @@
 # 1) 扫工作区
 git grep -n -I -E "password|passwd|secret|token|api[_-]?key|BEGIN .*PRIVATE KEY" -- ':!*.md'
 
-# 2) 扫本次要提交的内容
-git diff --cached -U0 | Select-String -Pattern "jvzny|riji-admin|github_pat_|BEGIN .*PRIVATE KEY"
+# 2) 扫本次要提交的内容（用通用模式，别把真实口令片段写进文档）
+git diff --cached -U0 | Select-String -Pattern "password|secret|token|github_pat_|BEGIN .*PRIVATE KEY"
 
 # 3) 确认没把不该传的文件加进来
 git diff --cached --name-only | Select-String -Pattern "\.env$|\.pem$|\.key$|session\.json|node_modules|dist/"
