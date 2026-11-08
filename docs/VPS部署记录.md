@@ -1,6 +1,7 @@
 # VPS 部署记录
 
 部署时间：2026-11-05
+最近更新：**2026-11-08**（升级到今天的最新代码 + 轮换管理员口令）
 服务器：`<你的服务器IP>`（Ubuntu 24.04，4G 内存，62G 可用）
 状态：**已上线可用**
 
@@ -8,16 +9,17 @@
 
 | 用途 | 地址 |
 |---|---|
-| 健康检查 | http://<你的服务器IP>:8080/healthz |
-| 管理后台 | http://<你的服务器IP>:8080/admin |
-| 客户端登录 | 服务器地址填 `http://<你的服务器IP>:8080` |
-端口已改为 <你的端口>（下面的地址请用这个端口）
-管理员账号：`admin`；密码**不再记录在文档里**（之前明文写过，已视为泄漏并轮换）。
-新密码在服务器 `/etc/riji.env` 的 `RJJ_ADMIN_PASSWORD`（权限 600），或问负责人。
+| 健康检查 | http://<你的服务器IP>:<你的端口>/healthz |
+| 管理后台 | http://<你的服务器IP>:<你的端口>/admin |
+| 客户端登录 | 服务器地址填 `http://<你的服务器IP>:<你的端口>` |
 
+管理员账号：`admin`。密码**不写在文档里**：
+- 服务器本机：`/root/riji-admin-password.txt`（权限 600，只有 root 能读）
+- 旧口令（曾在文档里明文出现）已于 2026-11-08 作废，实测返回 401
 
-> **请登录后立刻在客户端里改密码**（主页 ⋮ → 修改密码），改完删掉服务器上的
-> `/opt/riji/server/var/admin-initial-password.txt`。
+> 轮换是"重包裹主密钥"方式做的（`server/scripts/rewrap-password.mjs`），
+> 主密钥没变，所以 admin 名下的历史日记仍然可读。实测新旧主密钥一致。
+> 如果哪天又要改：优先在客户端里改（主页 ⋮ → 修改密码）；没有客户端时用这个脚本。
 
 ## 服务器上的东西在哪
 
@@ -56,7 +58,7 @@ sudo -u postgres pg_dump -F c riji > /root/riji-$(date +%F).dump
 apt-get install -y caddy
 cat > /etc/caddy/Caddyfile <<'EOF'
 api.your-domain.com {
-    reverse_proxy 127.0.0.1:8080
+    reverse_proxy 127.0.0.1:<你的端口>
 }
 EOF
 systemctl enable --now caddy
@@ -81,4 +83,4 @@ systemctl restart riji
 
 - 服务器上有 ffmpeg，媒体归一化已自动启用
 - 目前是单节点（primary）。要加副本参照 [multi-node.md](multi-node.md)
-- 8080 端口已能从公网访问；如果哪天不通了，先查云厂商安全组是否放行
+- <你的端口> 端口已能从公网访问；如果哪天不通了，先查云厂商安全组是否放行
