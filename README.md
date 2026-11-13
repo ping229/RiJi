@@ -78,12 +78,12 @@
 
 | 产物 | 说明 |
 |---|---|
-| `dist/RiJi-Windows-x64.zip` | Windows 客户端，解压即用，13.5MB（2026-11-08 已用新代码重建） |
-| `dist/RiJi-Android/RiJi-日记-arm64.apk` | 主流安卓手机（2018 年后），21.5MB（2026-11-09 构建，含本轮全部修复） |
-| `dist/RiJi-Android/RiJi-日记-armv7.apk` | 老款 32 位机型，19.8MB（同上） |
+| `dist/RiJi-Windows-x64.zip` | Windows 客户端，解压即用，13.5MB（2026-11-14 重建） |
+| `dist/RiJi-Android/RiJi-日记-arm64.apk` | 主流安卓手机（2018 年后），21.9MB（2026-11-14 构建） |
+| `dist/RiJi-Android/RiJi-日记-armv7.apk` | 老款 32 位机型，20.1MB（同日构建） |
 
-> Windows 包与两个安卓包都已在 2026-11-09 用最新代码重建过（打包脚本会校验
-> 二进制里是否含"后台上传 / 立即同步"这些新界面文案）。
+> Windows 包与两个安卓包都已在 2026-11-14 用最新代码重建过（打包时会校验
+> 二进制里是否含"后台上传 / 立即同步 / 双击缩放"这些新界面文案）。
 > 安卓仍**没有在真机上跑过**，只验证了构建与元数据。
 
 Android 安装与局域网访问说明见 `dist/RiJi-Android/安装说明.txt`。
