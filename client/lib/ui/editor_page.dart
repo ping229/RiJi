@@ -23,6 +23,8 @@ import '../core/session_store.dart';
 import '../core/sync_service.dart';
 import '../core/vv.dart';
 import 'camera_page.dart';
+import 'photo_viewer_page.dart';
+import 'video_player_page.dart';
 import 'widgets/audio_block.dart';
 import 'widgets/rich_text_view.dart';
 import 'widgets/audio_record_dialog.dart';
@@ -1299,47 +1301,29 @@ class _EditorPageState extends State<EditorPage> with WidgetsBindingObserver {
     );
   }
 
-  Future<void> _showOriginal(Block block, String originalRef) async {
-    Uint8List bytes;
-    try {
-      bytes = await _mediaBytes(originalRef);
-    } catch (e) {
-      if (mounted) setState(() => _status = '原图加载失败');
-      return;
-    }
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => Dialog(
-        insetPadding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: InteractiveViewer(
-                maxScale: 4,
-                child: Image.memory(bytes, fit: BoxFit.contain),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '原图 · ${(bytes.length / 1024).toStringAsFixed(0)} KB',
-                    style: Theme.of(dialogContext).textTheme.bodySmall,
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: const Text('关闭'),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+  /// 打开全屏看图。先拿本地已有的压缩图垫底，原图在页面里后台加载，
+  /// 失败也能看到原因并重试——不再"点了没反应"。
+  Future<void> _showOriginal(Block block, String originalRef) {
+    final preview = block.mediaRef == null ? null : _mediaCache[block.mediaRef!];
+    return PhotoViewerPage.open(
+      context,
+      title: '原图',
+      preview: preview,
+      caption: '原图',
+      loader: () => _mediaBytes(originalRef),
+    );
+  }
+
+  /// 直接看当前这张图（压缩版），无需原图也能放大、缩放
+  Future<void> _showPhoto(Block block) {
+    final key = block.mediaRef;
+    if (key == null) return Future<void>.value();
+    return PhotoViewerPage.open(
+      context,
+      title: block.fileName ?? '图片',
+      preview: _mediaCache[key],
+      caption: block.fileName,
+      loader: () => _mediaBytes(key),
     );
   }
 
@@ -1411,7 +1395,15 @@ class _EditorPageState extends State<EditorPage> with WidgetsBindingObserver {
         if (block.mediaRef == null) return const SizedBox.shrink();
         return _withUploadStatus(
           block,
-          _bounded(VideoBlockView(block: block, fileLoader: (_) => _fileFor(block))),
+          _bounded(VideoBlockView(
+            block: block,
+            fileLoader: (_) => _fileFor(block),
+            onFullscreen: () => VideoPlayerPage.open(
+              context,
+              title: block.fileName ?? '视频',
+              loader: () => _fileFor(block),
+            ),
+          )),
         );
       case BlockType.divider:
         return const Divider(height: 32);
@@ -1472,7 +1464,11 @@ class _EditorPageState extends State<EditorPage> with WidgetsBindingObserver {
               borderRadius: BorderRadius.circular(10),
               child: AspectRatio(
                 aspectRatio: aspect ?? 16 / 9,
-                child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+                child: GestureDetector(
+                  // 点图本身就能全屏看（没有原图也行），右上角按钮才是"原图"
+                  onTap: () => _showPhoto(block),
+                  child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+                ),
               ),
             ),
             if (originalRef != null && originalRef.isNotEmpty)

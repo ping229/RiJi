@@ -15,10 +15,14 @@ class VideoBlockView extends StatefulWidget {
     super.key,
     required this.block,
     required this.fileLoader,
+    this.onFullscreen,
   });
 
   final Block block;
   final Future<String> Function(String mediaKey) fileLoader;
+
+  /// 打开全屏播放（横向视频在卡片里太小）
+  final VoidCallback? onFullscreen;
 
   @override
   State<VideoBlockView> createState() => _VideoBlockViewState();
@@ -88,6 +92,20 @@ class _VideoBlockViewState extends State<VideoBlockView> {
             children: [
               VideoPlayer(controller),
               VideoProgressIndicator(controller, allowScrubbing: true, padding: const EdgeInsets.all(6)),
+              if (widget.onFullscreen != null)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: IconButton(
+                    tooltip: '全屏播放',
+                    icon: const Icon(Icons.fullscreen, size: 22),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black45,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: widget.onFullscreen,
+                  ),
+                ),
             ],
           ),
         ),

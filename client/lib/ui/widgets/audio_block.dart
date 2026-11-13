@@ -85,6 +85,16 @@ class _AudioBlockViewState extends State<AudioBlockView> {
     }
   }
 
+  Future<void> _seekTo(double ratio) async {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    final total = controller.value.duration.inMilliseconds;
+    if (total <= 0) return;
+    final target = (total * ratio.clamp(0.0, 1.0)).round();
+    await controller.seekTo(Duration(milliseconds: target));
+    if (mounted) setState(() {});
+  }
+
   String _fmt(Duration d) {
     final minutes = d.inMinutes.toString().padLeft(2, '0');
     final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
@@ -141,22 +151,32 @@ class _AudioBlockViewState extends State<AudioBlockView> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                _WaveformOrBar(block: widget.block, progress: ratio),
+                _WaveformOrBar(
+                  block: widget.block,
+                  progress: ratio,
+                  onSeek: _seekTo,
+                ),
               ],
             ),
           ),
+          if (_error != null)
+            TextButton(
+              onPressed: _preparing ? null : _toggle,
+              child: const Text('重试'),
+            ),
         ],
       ),
     );
   }
 }
 
-/// 有波形数据就画柱子，没有就退回进度条
+/// 有波形数据就画柱子，没有就退回进度条；点/拖任意位置可以跳转
 class _WaveformOrBar extends StatelessWidget {
-  const _WaveformOrBar({required this.block, required this.progress});
+  const _WaveformOrBar({required this.block, required this.progress, required this.onSeek});
 
   final Block block;
   final double progress;
+  final ValueChanged<double> onSeek;
 
   @override
   Widget build(BuildContext context) {
@@ -164,23 +184,40 @@ class _WaveformOrBar extends StatelessWidget {
     final raw = block.data['waveform'];
     final bars = raw is List ? raw.map((e) => (e as num).toInt()).toList() : const <int>[];
 
-    if (bars.isEmpty || Waveform.isSilent(bars)) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(3),
-        child: LinearProgressIndicator(value: progress, minHeight: 4),
-      );
-    }
-    return SizedBox(
-      height: 28,
-      width: double.infinity,
-      child: CustomPaint(
-        painter: _WaveformPainter(
-          bars: bars,
-          progress: progress,
-          played: theme.colorScheme.primary,
-          unplayed: theme.colorScheme.primary.withValues(alpha: 0.25),
-        ),
-      ),
+    final barsEmpty = bars.isEmpty || Waveform.isSilent(bars);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        void seekAt(Offset local) {
+          if (width <= 0) return;
+          onSeek((local.dx / width).clamp(0.0, 1.0));
+        }
+
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapDown: (details) => seekAt(details.localPosition),
+          onHorizontalDragUpdate: (details) => seekAt(details.localPosition),
+          child: SizedBox(
+            height: 28,
+            width: double.infinity,
+            child: barsEmpty
+                ? Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(value: progress, minHeight: 4),
+                    ),
+                  )
+                : CustomPaint(
+                    painter: _WaveformPainter(
+                      bars: bars,
+                      progress: progress,
+                      played: theme.colorScheme.primary,
+                      unplayed: theme.colorScheme.primary.withValues(alpha: 0.25),
+                    ),
+                  ),
+          ),
+        );
+      },
     );
   }
 }
