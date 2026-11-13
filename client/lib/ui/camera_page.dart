@@ -96,6 +96,7 @@ class _CameraCapturePageState extends State<CameraCapturePage> {
         _error = e.code == 'CameraAccessDenied'
             ? 'Windows 拒绝了摄像头访问。请打开「设置 → 隐私和安全性 → 相机」，'
                 '把「让桌面应用访问你的相机」和下方本应用的开关都打开；'
+                '如果那里已经允许，检查是否有微信/会议软件正占用摄像头，'
                 '也可以返回后用工具栏的「图片」「视频」选择已有文件。'
             : '摄像头初始化失败：${describeError(e)}';
       });

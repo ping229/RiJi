@@ -8,12 +8,13 @@ import 'core/crypto_service.dart';
 import 'core/local_store.dart';
 import 'core/session_store.dart';
 import 'core/sync_service.dart';
+import 'dev/device_selftest.dart';
 import 'dev/media_selftest.dart';
 import 'ui/home_page.dart';
 import 'ui/login_page.dart';
 
 /// 构建标记：用于确认"跑起来的程序是不是刚编译的这一版"
-const String kBuildMarker = 'BUILD-38-2240';
+const String kBuildMarker = 'BUILD-39-0114';
 
 void main(List<String> args) {
   _trace('main 进入，构建标记 $kBuildMarker');
@@ -21,6 +22,12 @@ void main(List<String> args) {
   if (selftest != null) {
     WidgetsFlutterBinding.ensureInitialized();
     runMediaSelfTest(selftest).then((code) => exit(code));
+    return;
+  }
+  // 设备诊断：摄像头/麦克风能不能用，底层报什么错
+  if (args.contains('--devicetest')) {
+    WidgetsFlutterBinding.ensureInitialized();
+    runDeviceTest().then((code) => exit(code));
     return;
   }
   runApp(RijiApp(initialDiaryDate: _parseDiaryArg(args)));

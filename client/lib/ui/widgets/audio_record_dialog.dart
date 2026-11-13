@@ -61,7 +61,9 @@ class _AudioRecordDialogState extends State<AudioRecordDialog> {
     final text = e.toString().toLowerCase();
     if (text.contains('拒绝访问') || text.contains('denied') || text.contains('access')) {
       return '系统拒绝了麦克风权限。Windows：设置 → 隐私和安全性 → 麦克风 → 允许桌面应用访问；'
-          '手机：在系统设置里给本应用麦克风权限';
+          '手机：在系统设置里给本应用麦克风权限。'
+          '如果设置里已经允许，检查 360 等安全软件是否拦截了本程序，'
+          '或把客户端复制到普通目录（不要放在权限被限制的文件夹）再试。';
     }
     return '无法开始录音：${describeError(e)}';
   }

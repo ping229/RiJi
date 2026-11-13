@@ -131,7 +131,9 @@ class SessionStore {
       () async => getApplicationSupportDirectory(),
       () async {
         final exeDir = File(Platform.resolvedExecutable).parent;
-        return Directory('${exeDir.path}${Platform.pathSeparator}data');
+        // 刻意不用 exe\data：那里是 Flutter 放 flutter_assets 的地方，
+        // 升级/重新解压时整目录会被覆盖，用户日记会一起消失（真实踩过）。
+        return Directory('${exeDir.path}${Platform.pathSeparator}riji-data');
       },
     ];
 

@@ -109,7 +109,7 @@ flutter build apk --release --split-per-abi
 | 情况 | 位置 |
 |---|---|
 | 正常 | `%APPDATA%\RiJi` |
-| 系统拒绝写 AppData | 程序同目录的 `data\`（自动回退） |
+| 系统拒绝写 AppData | 程序同目录的 `riji-data\`（自动回退） |
 
 两个位置都会在**客户端「自检」页顶部**显示实际路径，旁边有「打开数据目录」按钮。
 首次启动新位置时会自动从旧位置迁移会话与本地日记。
@@ -143,8 +143,25 @@ flutter build apk --release --split-per-abi
 
 ```powershell
 riji_client.exe --selftest=2026-11-02   # 用真实播放引擎自检媒体
+riji_client.exe --devicetest            # 摄像头/麦克风/文件写入自检（不开界面，打完即退）
 riji_client.exe --diary=2026-11-02      # 直接打开某一天的日记
 ```
+
+`--devicetest` 会打印：摄像头枚举与初始化结果、能否写临时目录、录 1 秒麦克风是否成功，
+最后给出 `SUMMARY ok=N fail=M`。排查"相机/麦克风用不了"时先跑它，能直接区分权限、占用与代码问题。
+
+### 一个真实踩过的坑：文件被标成 Low 完整性
+
+如果客户端所在文件夹带 `Low Mandatory Level` 标记，Windows 会让 `riji_client.exe`
+**降权运行**，后果是摄像头/麦克风被拒、临时目录写不进去（客户端只好把数据回退到 exe 同级的 `riji-data\`）。
+
+```powershell
+icacls "客户端目录\riji_client.exe"        # 看到 Low Mandatory Level 就是它
+icacls "客户端目录" /setintegritylevel (OI)(CI)Medium /T   # 修复
+```
+
+本仓库的工作区曾被这样标记过，因此构建脚本/发布流程里要保证 `client\build` 与 `dist`
+是 Medium：否则每次 `flutter build windows` 出来的 exe 都会是 Low，用户侧表现为"权限被拒绝"。
 
 ### 构建注意（受限网络环境）
 
