@@ -39,6 +39,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _busy = false;
   bool? _serverReachable;
   String? _error;
+  Map<String, dynamic>? _diagnosis;
 
   @override
   void initState() {
@@ -61,9 +62,71 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _checkServer() async {
     final api = ApiClient(baseUrl: _server.text.trim());
     final ok = await api.health();
+    final diagnosis = await api.diagnose();
     api.close();
     if (!mounted) return;
-    setState(() => _serverReachable = ok);
+    setState(() {
+      _serverReachable = ok;
+      _diagnosis = diagnosis;
+    });
+  }
+
+  /// 把诊断结果压成一行，贴在错误信息下面，方便截图
+  String _diagnosisLine(Map<String, dynamic> d) {
+    if (d['error'] != null) {
+      return '诊断：请求 /healthz 失败（${d['type']}，${d['ms']}ms）：${d['error']}';
+    }
+    return '诊断：/healthz 返回 HTTP ${d['status']}，类型 ${d['contentType']}，'
+        '${d['ms']}ms，内容开头「${d['body']}」';
+  }
+
+  Future<void> _showDiagnosis() async {
+    final d = _diagnosis;
+    if (d == null) {
+      await _checkServer();
+    }
+    if (!mounted) return;
+    final data = _diagnosis;
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('网络诊断'),
+        content: SizedBox(
+          width: 460,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('服务器地址：${_server.text.trim()}',
+                  style: Theme.of(dialogContext).textTheme.bodySmall),
+              const SizedBox(height: 8),
+              SelectableText(
+                data == null ? '还没有诊断结果' : _diagnosisLine(data),
+                style: Theme.of(dialogContext).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                '如果这里不是 {"status":"ok"}，说明手机拿到的不是接口数据：\n'
+                '· 内容像网页 → 被 WiFi 登录页 / 代理 / VPN 劫持\n'
+                '· 请求失败 → 网络不通或端口被拦\n'
+                '· 有 content-type: text/html 就是最典型的代理页面',
+                style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('关闭')),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _checkServer();
+            },
+            child: const Text('重新检测'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _submit() async {
@@ -151,13 +214,23 @@ class _LoginPageState extends State<LoginPage> {
       );
       await widget.onLoggedIn(session, api);
     } on ApiException catch (e) {
+      final diagnosis = await api.diagnose();
       api.close();
       if (!mounted) return;
-      setState(() => _error = e.message);
+      setState(() {
+        _error = '${e.message}\n${_diagnosisLine(diagnosis)}';
+        _diagnosis = diagnosis;
+        _serverReachable = diagnosis['ok'] == true;
+      });
     } catch (e) {
+      final diagnosis = await api.diagnose();
       api.close();
       if (!mounted) return;
-      setState(() => _error = '连不上服务器：${describeError(e)}');
+      setState(() {
+        _error = '登录失败：${describeError(e)}（${e.runtimeType}）\n${_diagnosisLine(diagnosis)}';
+        _diagnosis = diagnosis;
+        _serverReachable = diagnosis['ok'] == true;
+      });
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -328,12 +401,18 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 24),
                 if (_error != null) ...[
-                  Text(
+                  SelectableText(
                     _error!,
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: _showDiagnosis,
+                    icon: const Icon(Icons.network_check, size: 18),
+                    label: const Text('网络诊断'),
+                  ),
+                  const SizedBox(height: 8),
                 ],
                 TextButton(
                   onPressed: _busy ? null : _showRecoverDialog,

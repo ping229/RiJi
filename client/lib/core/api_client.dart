@@ -61,13 +61,65 @@ class ApiClient {
         error['message'] as String? ?? '请求失败（${res.statusCode}）',
       );
     }
-    throw ApiException(res.statusCode, 'UNKNOWN', '请求失败（${res.statusCode}）');
+    throw ApiException(
+      res.statusCode,
+      'UNKNOWN',
+      '请求失败（HTTP ${res.statusCode}，类型 ${res.headers['content-type'] ?? '未标注'}）：'
+          '${previewBody(res.bodyBytes)}',
+    );
+  }
+
+  /// 把响应前若干字节转成可读文本，用于诊断"服务器返回的不是 JSON"
+  static String previewBody(List<int> bytes, {int limit = 120}) {
+    String text;
+    try {
+      text = utf8.decode(bytes, allowMalformed: true);
+    } catch (_) {
+      text = bytes.take(limit).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+    }
+    text = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    return text.length <= limit ? text : '${text.substring(0, limit)}…';
   }
 
   dynamic _decode(http.Response res) {
     if (res.statusCode >= 400) _throwFrom(res);
     if (res.bodyBytes.isEmpty) return null;
-    return jsonDecode(utf8.decode(res.bodyBytes));
+    try {
+      return jsonDecode(utf8.decode(res.bodyBytes));
+    } on FormatException {
+      // 非 JSON 通常意味着被代理/公共 WiFi 登录页接管，或地址指到了别的服务。
+      // 直接把状态码、类型和内容开头带上，用户能一眼判断。
+      throw ApiException(
+        res.statusCode,
+        'INVALID_RESPONSE',
+        '服务器返回的不是接口数据（HTTP ${res.statusCode}，'
+        '类型 ${res.headers['content-type'] ?? '未标注'}）：${previewBody(res.bodyBytes)}',
+      );
+    }
+  }
+
+  /// 网络诊断：只看 /healthz，把状态码、类型、耗时和内容开头都带回来
+  Future<Map<String, dynamic>> diagnose() async {
+    final watch = Stopwatch()..start();
+    try {
+      final res = await _http
+          .get(_uri('/healthz'))
+          .timeout(const Duration(seconds: 8));
+      return <String, dynamic>{
+        'ok': res.statusCode == 200,
+        'status': res.statusCode,
+        'contentType': res.headers['content-type'] ?? '未标注',
+        'ms': watch.elapsedMilliseconds,
+        'body': previewBody(res.bodyBytes, limit: 200),
+      };
+    } catch (e) {
+      return <String, dynamic>{
+        'ok': false,
+        'error': e.toString(),
+        'type': e.runtimeType.toString(),
+        'ms': watch.elapsedMilliseconds,
+      };
+    }
   }
 
   Future<void> _refreshIfPossible() async {
@@ -98,15 +150,17 @@ class ApiClient {
     required String deviceName,
     required String platform,
   }) async {
-    final res = await _http.post(
-      _uri('/api/auth/login'),
-      headers: {'content-type': 'application/json'},
-      body: jsonEncode({
-        'username': username,
-        'password': password,
-        'device': {'name': deviceName, 'platform': platform},
-      }),
-    );
+    final res = await _http
+        .post(
+          _uri('/api/auth/login'),
+          headers: {'content-type': 'application/json'},
+          body: jsonEncode({
+            'username': username,
+            'password': password,
+            'device': {'name': deviceName, 'platform': platform},
+          }),
+        )
+        .timeout(const Duration(seconds: 20));
     final body = _decode(res) as Map<String, dynamic>;
     final result = LoginResult.fromJson(body);
     accessToken = result.accessToken;
@@ -380,7 +434,7 @@ class ApiClient {
 
   Future<bool> health() async {
     try {
-      final res = await _http.get(_uri('/healthz'));
+      final res = await _http.get(_uri('/healthz')).timeout(const Duration(seconds: 6));
       return res.statusCode == 200;
     } catch (_) {
       return false;

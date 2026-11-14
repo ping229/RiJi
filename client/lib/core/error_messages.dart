@@ -74,7 +74,7 @@ String describeError(Object error) {
     return '读写本地文件失败：检查磁盘空间和写入权限';
   }
   if (error is FormatException) {
-    return '数据格式不正确，文件可能已损坏';
+    return '收到的数据不是预期格式（常见于网络代理/公共 WiFi 登录页劫持，或地址指到了别的服务）';
   }
 
   // 4. 兜底：保留原始信息，方便排查，但不加恐吓性的前缀

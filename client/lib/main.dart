@@ -14,7 +14,7 @@ import 'ui/home_page.dart';
 import 'ui/login_page.dart';
 
 /// 构建标记：用于确认"跑起来的程序是不是刚编译的这一版"
-const String kBuildMarker = 'BUILD-39-0114';
+const String kBuildMarker = 'BUILD-40-1114';
 
 void main(List<String> args) {
   _trace('main 进入，构建标记 $kBuildMarker');
